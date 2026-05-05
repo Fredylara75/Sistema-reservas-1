@@ -1,127 +1,235 @@
 from servicio import Servicio
-from excepciones import *
-import logging
+from excepciones import ServicioNoDisponible, DatosInvalidos
 
-
-# ======================================================
-# RESERVA DE SALAS
-# ======================================================
+# SERVICIO 1 - RESERVA DE SALAS
 
 class ReservaSala(Servicio):
 
-    def __init__(self, nombre, costo_base, capacidad,
-                 disponible=True,
-                 aire_acondicionado=False,
-                 internet=False,
-                 videobeam=False):
+    tipos_sala = ["normal", "vip", "auditorio"]
 
-        super().__init__(nombre, costo_base)
+    def __init__(self, horas, tipo_sala="normal"):
+        super().__init__("Reserva de Sala")
 
-        self.capacidad = capacidad
-        self.disponible = disponible
-
-        self.aire_acondicionado = aire_acondicionado
-        self.internet = internet
-        self.videobeam = videobeam
-
-    def validar_disponibilidad(self):
-
-        if not self.disponible:
-            raise ServicioNoDisponibleError(
-                "La sala no se encuentra disponible"
+        if horas <= 0:
+            raise DatosInvalidos(
+                "Las horas deben ser mayores a 0"
             )
 
-    def calcular_costo(self, horas=1):
+        if tipo_sala.lower() not in self.tipos_sala:
+            raise ServicioNoDisponible(
+                "Tipo de sala no disponible"
+            )
 
-        costo = self._costo_base * horas
+        self.horas = horas
+        self.tipo_sala = tipo_sala.lower()
 
-        if self.aire_acondicionado:
-            costo += 50000
+    def calcular_costo(self, descuento=0):
 
-        if self.internet:
-            costo += 30000
+        if self.tipo_sala == "vip":
+            costo = self.horas * 12000
 
-        if self.videobeam:
-            costo += 40000
+        elif self.tipo_sala == "auditorio":
+            costo = self.horas * 20000
 
-        return costo
+        else:
+            costo = self.horas * 7000
+
+        total = costo - descuento
+
+        if total < 0:
+            raise DatosInvalidos(
+                "El descuento no puede ser mayor al costo"
+            )
+
+        return total
 
     def descripcion(self):
-
         return (
-            f"Sala: {self._nombre} | "
-            f"Capacidad: {self.capacidad} personas"
+            f"Servicio: {self.nombre} | "
+            f"Tipo de sala: {self.tipo_sala} | "
+            f"Horas: {self.horas}"
         )
 
-
-# ======================================================
-# ALQUILER DE EQUIPOS
-# ======================================================
+# SERVICIO 2 - ALQUILER DE EQUIPOS
 
 class AlquilerEquipo(Servicio):
 
-    def __init__(self, nombre, costo_base,
-                 tipo_equipo,
-                 cantidad_disponible):
+    equipos_disponibles = [
 
-        super().__init__(nombre, costo_base)
+        # AUDIOVISUALES
+        "video beam",
+        "pantalla de proyeccion",
+        "telon",
+        "sistema de sonido",
+        "microfono inalambrico",
+        "microfono de solapa",
 
-        self.tipo_equipo = tipo_equipo
-        self.cantidad_disponible = cantidad_disponible
+        # MOBILIARIO
+        "sillas auditorio",
+        "sillas banquete",
+        "mesa redonda",
+        "mesa rectangular",
+        "mesa coctel",
+        "sillones",
 
-    def validar_disponibilidad(self, cantidad):
+        # GESTION Y CONECTIVIDAD
+        "pantalla tactil",
+        "software de eventos",
+        "wifi empresarial",
 
-        if cantidad > self.cantidad_disponible:
-            raise EquipoNoDisponibleError(
-                "No hay suficientes equipos disponibles"
+        # AMBIENTE
+        "aire acondicionado",
+        "calefaccion",
+        "iluminacion regulable"
+    ]
+
+    def __init__(self, equipo, dias):
+        super().__init__("Alquiler de Equipos")
+
+        if dias <= 0:
+            raise DatosInvalidos(
+                "Los días deben ser mayores a 0"
             )
 
-    def calcular_costo(self, dias=1, cantidad=1):
+        if equipo.lower() not in self.equipos_disponibles:
+            raise ServicioNoDisponible(
+                f"El equipo '{equipo}' no está disponible"
+            )
 
-        return self._costo_base * dias * cantidad
+        self.equipo = equipo.lower()
+        self.dias = dias
+
+    def calcular_costo(self, impuesto=0):
+
+        precios = {
+            "video beam": 20000,
+            "pantalla de proyeccion": 15000,
+            "telon": 10000,
+            "sistema de sonido": 70000,
+            "microfono inalambrico": 15000,
+            "microfono de solapa": 18000,
+            "sillas auditorio": 5000,
+            "sillas banquete": 7000,
+            "mesa redonda": 10000,
+            "mesa rectangular": 9000,
+            "mesa coctel": 12000,
+            "sillones": 15000,
+            "pantalla tactil": 40000,
+            "software de eventos": 60000,
+            "wifi empresarial": 25000,
+            "aire acondicionado": 35000,
+            "calefaccion": 30000,
+            "iluminacion regulable": 28000
+        }
+
+        costo_base = precios[self.equipo] * self.dias
+
+        total = costo_base + impuesto
+
+        return total
 
     def descripcion(self):
-
         return (
-            f"Equipo: {self.tipo_equipo} | "
-            f"Disponibles: {self.cantidad_disponible}"
+            f"Servicio: {self.nombre} | "
+            f"Equipo: {self.equipo} | "
+            f"Días: {self.dias}"
         )
 
 
-# ======================================================
-# ASESORIAS
-# ======================================================
+# SERVICIO 3 - ASESORIAS ESPECIALIZADAS
 
 class Asesoria(Servicio):
 
-    def __init__(self, nombre, costo_base,
-                 especialidad,
-                 experto_certificado=True):
+    niveles_validos = [
+        "basico",
+        "intermedio",
+        "avanzado"
+    ]
 
-        super().__init__(nombre, costo_base)
+    def __init__(self, nivel, horas):
+        super().__init__("Asesoría Especializada")
 
-        self.especialidad = especialidad
-        self.experto_certificado = experto_certificado
-
-    def validar_disponibilidad(self):
-
-        if not self.experto_certificado:
-            raise ServicioNoDisponibleError(
-                "No existe asesor certificado disponible"
+        if nivel.lower() not in self.niveles_validos:
+            raise ServicioNoDisponible(
+                "Nivel de asesoría inválido"
             )
 
-    def calcular_costo(self, horas=1):
+        if horas <= 0:
+            raise DatosInvalidos(
+                "Las horas deben ser mayores a 0"
+            )
 
-        costo = self._costo_base * horas
+        self.nivel = nivel.lower()
+        self.horas = horas
 
-        if horas > 5:
-            costo *= 0.9
+    def calcular_costo(self, descuento=0, impuesto=0):
 
-        return costo
+        if self.nivel == "basico":
+            valor_hora = 20000
+
+        elif self.nivel == "intermedio":
+            valor_hora = 35000
+
+        else:
+            valor_hora = 50000
+
+        subtotal = valor_hora * self.horas
+
+        total = subtotal - descuento + impuesto
+
+        if total < 0:
+            raise DatosInvalidos(
+                "El total no puede ser negativo"
+            )
+
+        return total
 
     def descripcion(self):
-
         return (
-            f"Asesoría especializada en "
-            f"{self.especialidad}"
+            f"Servicio: {self.nombre} | "
+            f"Nivel: {self.nivel} | "
+            f"Horas: {self.horas}"
         )
+
+
+# SERVICIO 4 - SERVICIOS COMPLEMENTARIOS
+
+class ServicioComplementario(Servicio):
+
+    servicios_disponibles = [
+        "parqueadero",
+        "zona de registro",
+        "soporte tecnico"
+    ]
+
+    def __init__(self, servicio, cantidad_horas):
+        super().__init__("Servicio Complementario")
+
+        if servicio.lower() not in self.servicios_disponibles:
+            raise ServicioNoDisponible(
+                "Servicio complementario no disponible"
+            )
+
+        if cantidad_horas <= 0:
+            raise DatosInvalidos(
+                "Las horas deben ser mayores a 0"
+            )
+
+        self.servicio = servicio.lower()
+        self.cantidad_horas = cantidad_horas
+
+    def calcular_costo(self):
+
+        costos = {
+            "parqueadero": 7500,
+            "zona de registro": 15000,
+            "soporte tecnico": 40000
+        }
+
+        return costos[self.servicio] * self.cantidad_horas
+
+    def descripcion(self):
+        return (
+            f"Servicio: {self.servicio} | "
+            f"Horas: {self.cantidad_horas}")
+        
